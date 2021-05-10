@@ -22,7 +22,10 @@ export default {
         moveLeft: false,
         moveRight: false,
       },
-      player: undefined,
+      player: {
+        body: undefined,
+        mesh: undefined,
+      },
       maxPlayerVelocity: 5,
       playerJumpVelocity: 5,
     };
@@ -50,39 +53,45 @@ export default {
       // Move the player
       this.movePlayer()
 
+      // Update the Camera
+      this.camera.position.x = this.player.mesh.position.x;
+      this.camera.position.y = this.player.mesh.position.y + 20;
+      this.camera.position.z = this.player.mesh.position.z + 50;
+      this.camera.lookAt(this.player.mesh.position);
+
       this.renderer.render(this.scene, this.camera);
     },
     movePlayer() {
       // Apply the forces to move the player
       if (this.controls.moveForward) {
-        this.player.velocity.z = -Math.abs(this.player.velocity.z);
-        this.player.applyForce(new CANNON.Vec3(0, 0, -200));
+        this.player.body.velocity.z = -Math.abs(this.player.body.velocity.z);
+        this.player.body.applyForce(new CANNON.Vec3(0, 0, -200));
       }
       if (this.controls.moveBackward) {
-        this.player.velocity.z = Math.abs(this.player.velocity.z);
-        this.player.applyForce(new CANNON.Vec3(0, 0, 200));
+        this.player.body.velocity.z = Math.abs(this.player.body.velocity.z);
+        this.player.body.applyForce(new CANNON.Vec3(0, 0, 200));
       }
       if (this.controls.moveLeft) {
-        this.player.velocity.x = -Math.abs(this.player.velocity.x);
-        this.player.applyForce(new CANNON.Vec3(-200, 0, 0));
+        this.player.body.velocity.x = -Math.abs(this.player.body.velocity.x);
+        this.player.body.applyForce(new CANNON.Vec3(-200, 0, 0));
       }
       if (this.controls.moveRight) {
-        this.player.velocity.x = Math.abs(this.player.velocity.x);
-        this.player.applyForce(new CANNON.Vec3(200, 0, 0));
+        this.player.body.velocity.x = Math.abs(this.player.body.velocity.x);
+        this.player.body.applyForce(new CANNON.Vec3(200, 0, 0));
       }
 
       // Cap player speed
-      if (this.player.velocity.x > this.maxPlayerVelocity) {
-        this.player.velocity.x = this.maxPlayerVelocity;
+      if (this.player.body.velocity.x > this.maxPlayerVelocity) {
+        this.player.body.velocity.x = this.maxPlayerVelocity;
       }
-      if (this.player.velocity.x < -this.maxPlayerVelocity) {
-        this.player.velocity.x = -this.maxPlayerVelocity;
+      if (this.player.body.velocity.x < -this.maxPlayerVelocity) {
+        this.player.body.velocity.x = -this.maxPlayerVelocity;
       }
-      if (this.player.velocity.z > this.maxPlayerVelocity) {
-        this.player.velocity.z = this.maxPlayerVelocity;
+      if (this.player.body.velocity.z > this.maxPlayerVelocity) {
+        this.player.body.velocity.z = this.maxPlayerVelocity;
       }
-      if (this.player.velocity.z < -this.maxPlayerVelocity) {
-        this.player.velocity.z = -this.maxPlayerVelocity;
+      if (this.player.body.velocity.z < -this.maxPlayerVelocity) {
+        this.player.body.velocity.z = -this.maxPlayerVelocity;
       }
     },
     initThree() {
@@ -144,8 +153,9 @@ export default {
       this.world.addBody(groundBody)
 
       // Create floor ThreeJS mesh
+      const loader = new THREE.TextureLoader();
       const floorGeometry = new THREE.PlaneBufferGeometry(100, 100, 1, 1)
-      const floorMaterial = new THREE.MeshLambertMaterial({ color: 0xff00ff })
+      const floorMaterial = new THREE.MeshBasicMaterial({map: loader.load('https://threejsfundamentals.org/threejs/resources/images/flower-1.jpg')})
       const floor = new THREE.Mesh(floorGeometry, floorMaterial)
       floor.receiveShadow = true
       this.scene.add(floor)
@@ -175,7 +185,8 @@ export default {
       this.objects.push({ body: sphereBody, mesh: sphereMesh });
 
       // Set the player (Temporary)
-      this.player = sphereBody;
+      this.player.body = sphereBody;
+      this.player.mesh = sphereMesh;
     },
     onKeyDown(event) {
       // Allow WASD or arrow keys for movement
@@ -197,7 +208,7 @@ export default {
           this.controls.moveRight = true
           break
         case 'Space':
-          this.player.velocity.y = this.playerJumpVelocity
+          this.player.body.velocity.y = this.playerJumpVelocity
           break
       }
     },
