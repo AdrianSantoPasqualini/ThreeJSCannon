@@ -14,6 +14,17 @@ export default {
     return {
       timeStep: 1/60,
       objects: [],
+
+      // Player Movement
+      controls: {
+        moveForward: false,
+        moveBackward: false,
+        moveLeft: false,
+        moveRight: false,
+      },
+      player: undefined,
+      maxPlayerVelocity: 5,
+      playerJumpVelocity: 5,
     };
   },
   methods: {
@@ -36,7 +47,43 @@ export default {
         obj.mesh.quaternion.copy(obj.body.quaternion)
       }
 
+      // Move the player
+      this.movePlayer()
+
       this.renderer.render(this.scene, this.camera);
+    },
+    movePlayer() {
+      // Apply the forces to move the player
+      if (this.controls.moveForward) {
+        this.player.velocity.z = -Math.abs(this.player.velocity.z);
+        this.player.applyForce(new CANNON.Vec3(0, 0, -200));
+      }
+      if (this.controls.moveBackward) {
+        this.player.velocity.z = Math.abs(this.player.velocity.z);
+        this.player.applyForce(new CANNON.Vec3(0, 0, 200));
+      }
+      if (this.controls.moveLeft) {
+        this.player.velocity.x = -Math.abs(this.player.velocity.x);
+        this.player.applyForce(new CANNON.Vec3(-200, 0, 0));
+      }
+      if (this.controls.moveRight) {
+        this.player.velocity.x = Math.abs(this.player.velocity.x);
+        this.player.applyForce(new CANNON.Vec3(200, 0, 0));
+      }
+
+      // Cap player speed
+      if (this.player.velocity.x > this.maxPlayerVelocity) {
+        this.player.velocity.x = this.maxPlayerVelocity;
+      }
+      if (this.player.velocity.x < -this.maxPlayerVelocity) {
+        this.player.velocity.x = -this.maxPlayerVelocity;
+      }
+      if (this.player.velocity.z > this.maxPlayerVelocity) {
+        this.player.velocity.z = this.maxPlayerVelocity;
+      }
+      if (this.player.velocity.z < -this.maxPlayerVelocity) {
+        this.player.velocity.z = -this.maxPlayerVelocity;
+      }
     },
     initThree() {
       const canvReference = document.getElementById("three-canvas");
@@ -126,7 +173,55 @@ export default {
 
       // Store body/mesh pair
       this.objects.push({ body: sphereBody, mesh: sphereMesh });
-    }
+
+      // Set the player (Temporary)
+      this.player = sphereBody;
+    },
+    onKeyDown(event) {
+      // Allow WASD or arrow keys for movement
+      switch (event.code) {
+        case 'KeyW':
+        case 'ArrowUp':
+          this.controls.moveForward = true
+          break
+        case 'KeyA':
+        case 'ArrowLeft':
+          this.controls.moveLeft = true
+          break
+        case 'KeyS':
+        case 'ArrowDown':
+          this.controls.moveBackward = true
+          break
+        case 'KeyD':
+        case 'ArrowRight':
+          this.controls.moveRight = true
+          break
+        case 'Space':
+          this.player.velocity.y = this.playerJumpVelocity
+          break
+      }
+    },
+    onKeyUp(event) {
+      // Allow WASD or arrow keys for movement
+      switch (event.code) {
+        case 'KeyW':
+        case 'ArrowUp':
+          this.controls.moveForward = false
+          break
+        case 'KeyA':
+        case 'ArrowLeft':
+          this.controls.moveLeft = false
+          break
+        case 'KeyS':
+        case 'ArrowDown':
+          this.controls.moveBackward = false
+          break
+        case 'KeyD':
+        case 'ArrowRight':
+          this.controls.moveRight = false
+          break
+      }
+    },
   },
   mounted() {
     this.initThree();
@@ -134,6 +229,8 @@ export default {
     this.addBox();
     this.setFloor();
     this.animate();
+    document.addEventListener('keydown', this.onKeyDown)
+    document.addEventListener('keyup', this.onKeyUp)
   }
 }
 </script>
